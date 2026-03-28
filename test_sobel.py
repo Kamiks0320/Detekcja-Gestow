@@ -1,6 +1,8 @@
 import cv2
 
 import numpy as np
+
+
 def fill_holes(mask):
     filled = mask.copy()
     h, w = mask.shape[:2]
@@ -12,6 +14,7 @@ def fill_holes(mask):
     result = cv2.bitwise_or(mask, filled_inv)
 
     return result
+
 
 def normalize_hand(image, hand_mask, contour, output_size=256):
     x, y, w, h = cv2.boundingRect(contour)
@@ -34,7 +37,9 @@ def normalize_hand(image, hand_mask, contour, output_size=256):
     new_h = max(1, int(crop_h * scale))
 
     resized_img = cv2.resize(hand_only, (new_w, new_h), interpolation=cv2.INTER_AREA)
-    resized_mask = cv2.resize(mask_crop, (new_w, new_h), interpolation=cv2.INTER_NEAREST)
+    resized_mask = cv2.resize(
+        mask_crop, (new_w, new_h), interpolation=cv2.INTER_NEAREST
+    )
 
     canvas_img = np.zeros((output_size, output_size, 3), dtype=np.uint8)
     canvas_mask = np.zeros((output_size, output_size), dtype=np.uint8)
@@ -42,13 +47,13 @@ def normalize_hand(image, hand_mask, contour, output_size=256):
     ox = (output_size - new_w) // 2
     oy = (output_size - new_h) // 2
 
-    canvas_img[oy:oy + new_h, ox:ox + new_w] = resized_img
-    canvas_mask[oy:oy + new_h, ox:ox + new_w] = resized_mask
+    canvas_img[oy : oy + new_h, ox : ox + new_w] = resized_img
+    canvas_mask[oy : oy + new_h, ox : ox + new_w] = resized_mask
 
     return canvas_img, canvas_mask
 
 
-image_path = r"C:\Users\marci\Documents\studium\semestr6\Wizja Komputerowa\Projekt\Coding\cropped\L_P_hgr1_id11_1.jpg"
+image_path = r"cropped\L_P_hgr1_id11_1.jpg"
 image = cv2.imread(image_path)
 
 if image is None:
@@ -57,8 +62,8 @@ if image is None:
 gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 blur = cv2.GaussianBlur(gray, (5, 5), 0)
 
-edges = cv2.Canny(blur, 10, 60)    # bardzo czułe
-#edges = cv2.Canny(gray, 100, 200)
+edges = cv2.Canny(blur, 10, 60)  # bardzo czułe
+# edges = cv2.Canny(gray, 100, 200)
 # binaryzacja krawędzi
 _, edge_mask = cv2.threshold(edges, 50, 255, cv2.THRESH_BINARY)
 
@@ -111,3 +116,4 @@ cv2.imshow("Contour", vis)
 
 cv2.waitKey(0)
 cv2.destroyAllWindows()
+

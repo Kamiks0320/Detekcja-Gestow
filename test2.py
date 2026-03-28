@@ -23,7 +23,9 @@ def normalize_hand(image, hand_mask, contour, output_size=256):
     new_h = max(1, int(crop_h * scale))
 
     resized_img = cv2.resize(hand_only, (new_w, new_h), interpolation=cv2.INTER_AREA)
-    resized_mask = cv2.resize(mask_crop, (new_w, new_h), interpolation=cv2.INTER_NEAREST)
+    resized_mask = cv2.resize(
+        mask_crop, (new_w, new_h), interpolation=cv2.INTER_NEAREST
+    )
 
     canvas_img = np.zeros((output_size, output_size, 3), dtype=np.uint8)
     canvas_mask = np.zeros((output_size, output_size), dtype=np.uint8)
@@ -31,8 +33,8 @@ def normalize_hand(image, hand_mask, contour, output_size=256):
     ox = (output_size - new_w) // 2
     oy = (output_size - new_h) // 2
 
-    canvas_img[oy:oy + new_h, ox:ox + new_w] = resized_img
-    canvas_mask[oy:oy + new_h, ox:ox + new_w] = resized_mask
+    canvas_img[oy : oy + new_h, ox : ox + new_w] = resized_img
+    canvas_mask[oy : oy + new_h, ox : ox + new_w] = resized_mask
 
     return canvas_img, canvas_mask
 
@@ -44,13 +46,7 @@ def grabcut_hand_segmentation(image, rect, iterations=5):
     fgd_model = np.zeros((1, 65), np.float64)
 
     cv2.grabCut(
-        image,
-        mask,
-        rect,
-        bgd_model,
-        fgd_model,
-        iterations,
-        cv2.GC_INIT_WITH_RECT
+        image, mask, rect, bgd_model, fgd_model, iterations, cv2.GC_INIT_WITH_RECT
     )
 
     # 0 i 2 = tło, 1 i 3 = obiekt
@@ -85,7 +81,7 @@ def get_largest_contour(mask, min_area=1500):
 
 
 def main():
-    image_path = r"C:\Users\marci\Documents\studium\semestr6\Wizja Komputerowa\Projekt\Coding\cropped\L_P_hgr1_id08_3.jpg"
+    image_path = r"cropped\L_P_hgr1_id08_3.jpg"
 
     image = cv2.imread(image_path)
     if image is None:
@@ -94,7 +90,7 @@ def main():
 
     # Prostokąt obejmujący dłoń: (x, y, w, h)
     # Musi zawierać całą dłoń i jak najmniej tła
-    rect = (0+1 , 0+1, image.shape[1]-1, image.shape[0]-1)
+    rect = (0 + 1, 0 + 1, image.shape[1] - 1, image.shape[0] - 1)
 
     raw_mask = grabcut_hand_segmentation(image, rect, iterations=5)
     cleaned_mask = clean_mask(raw_mask)
@@ -125,7 +121,9 @@ def main():
     cv2.rectangle(contour_view, (bx, by), (bx + bw, by + bh), (255, 0, 0), 2)
 
     segmented_hand = cv2.bitwise_and(image, image, mask=hand_mask)
-    normalized_hand, normalized_mask = normalize_hand(image, hand_mask, contour, output_size=256)
+    normalized_hand, normalized_mask = normalize_hand(
+        image, hand_mask, contour, output_size=256
+    )
 
     cv2.imshow("1. Original", image)
     cv2.imshow("2. GrabCut rect", rect_view)
@@ -143,3 +141,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

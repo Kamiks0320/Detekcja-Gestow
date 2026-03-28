@@ -60,7 +60,7 @@ class HandPreprocessingFromImage:
 
         filtered = np.zeros_like(mask)
         for c in contours:
-            if cv2.contourArea(c) > 5000:   # zwiększ próg
+            if cv2.contourArea(c) > 5000:  # zwiększ próg
                 cv2.drawContours(filtered, [c], -1, 255, -1)
 
         mask = filtered
@@ -77,13 +77,17 @@ class HandPreprocessingFromImage:
         cv2.drawContours(hand_mask, [largest], -1, 255, thickness=cv2.FILLED)
 
         # Jeszcze jedno domknięcie po narysowaniu obiektu
-        hand_mask = cv2.morphologyEx(hand_mask, cv2.MORPH_CLOSE, self.kernel_close, iterations=2)
+        hand_mask = cv2.morphologyEx(
+            hand_mask, cv2.MORPH_CLOSE, self.kernel_close, iterations=2
+        )
 
         return largest, hand_mask
 
     def normalize_hand(self, image, hand_mask, contour):
         if contour is None:
-            empty_img = np.zeros((self.output_size, self.output_size, 3), dtype=np.uint8)
+            empty_img = np.zeros(
+                (self.output_size, self.output_size, 3), dtype=np.uint8
+            )
             empty_mask = np.zeros((self.output_size, self.output_size), dtype=np.uint8)
             return empty_img, empty_mask
 
@@ -106,8 +110,12 @@ class HandPreprocessingFromImage:
         new_w = max(1, int(crop_w * scale))
         new_h = max(1, int(crop_h * scale))
 
-        resized_img = cv2.resize(hand_only, (new_w, new_h), interpolation=cv2.INTER_AREA)
-        resized_mask = cv2.resize(mask_crop, (new_w, new_h), interpolation=cv2.INTER_NEAREST)
+        resized_img = cv2.resize(
+            hand_only, (new_w, new_h), interpolation=cv2.INTER_AREA
+        )
+        resized_mask = cv2.resize(
+            mask_crop, (new_w, new_h), interpolation=cv2.INTER_NEAREST
+        )
 
         canvas_img = np.zeros((self.output_size, self.output_size, 3), dtype=np.uint8)
         canvas_mask = np.zeros((self.output_size, self.output_size), dtype=np.uint8)
@@ -115,8 +123,12 @@ class HandPreprocessingFromImage:
         offset_x = (self.output_size - new_w) // 2
         offset_y = (self.output_size - new_h) // 2
 
-        canvas_img[offset_y:offset_y + new_h, offset_x:offset_x + new_w] = resized_img
-        canvas_mask[offset_y:offset_y + new_h, offset_x:offset_x + new_w] = resized_mask
+        canvas_img[offset_y : offset_y + new_h, offset_x : offset_x + new_w] = (
+            resized_img
+        )
+        canvas_mask[offset_y : offset_y + new_h, offset_x : offset_x + new_w] = (
+            resized_mask
+        )
 
         return canvas_img, canvas_mask
 
@@ -126,7 +138,9 @@ class HandPreprocessingFromImage:
         mask_ycrcb, mask_hsv, raw_skin_mask = self.skin_segmentation(image)
         cleaned_mask = self.clean_mask(raw_skin_mask)
         contour, hand_mask = self.extract_largest_contour(cleaned_mask)
-        normalized_hand, normalized_mask = self.normalize_hand(image, hand_mask, contour)
+        normalized_hand, normalized_mask = self.normalize_hand(
+            image, hand_mask, contour
+        )
 
         vis = image.copy()
         if contour is not None:
@@ -143,17 +157,14 @@ class HandPreprocessingFromImage:
             "hand_mask": hand_mask,
             "contour_view": vis,
             "normalized_hand": normalized_hand,
-            "normalized_mask": normalized_mask
+            "normalized_mask": normalized_mask,
         }
 
 
 def main():
-    image_path = r"C:\Users\marci\Documents\studium\semestr6\Wizja Komputerowa\Projekt\Coding\cropped\1_P_hgr1_id04_1.jpg"
+    image_path = r"cropped\1_P_hgr1_id04_1.jpg"
 
-    processor = HandPreprocessingFromImage(
-        image_path=image_path,
-        output_size=256
-    )
+    processor = HandPreprocessingFromImage(image_path=image_path, output_size=256)
 
     try:
         results = processor.process()
@@ -177,3 +188,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
