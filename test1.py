@@ -85,15 +85,17 @@ class HandPreprocessingFromImage:
 
 
 def main():
-    path = "original_images\\"
+    #path = "original_images\\"
+    path = os.path.join(".", "original_images")
     files = [f for f in os.listdir(path) if os.path.isfile(os.path.join(path, f))]
     random_files = random.sample(files, 1)
 
     image_size = 400
     for image_path in random_files:
+        full_path = os.path.join(path, image_path)
         # image_path = "O_P_hgr1_id07_2.jpg"
         processor = HandPreprocessingFromImage(
-            image_path=path + image_path, output_size=256
+            image_path=full_path, output_size=256
         )
 
         try:
