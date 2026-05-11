@@ -5,7 +5,7 @@ class Model:
     def __init__(self, image_db, test_percentage=0.1):
         self.feature_database = [[], []]
 
-        images, masks, labels = image_db
+        images, masks, labels, file_names = image_db
         db_labeled = {}
         for i in range(len(images)):
             if labels[i] not in db_labeled:
@@ -28,6 +28,7 @@ class Model:
                     test_images.append(image)
                     test_masks.append(mask)
                     test_labels.append(label)
+                    print(file_names[j])
                 else:
                     model_images.append(image)
                     model_masks.append(mask)
