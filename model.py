@@ -19,7 +19,7 @@ class Model:
         model_masks = []
         model_labels = []
 
-        for label in labels:
+        for label in db_labeled:
             test_count = int(len(db_labeled[label]) * test_percentage)
             for j in range(len(db_labeled[label])):
                 image = images[db_labeled[label][j]]
@@ -31,7 +31,7 @@ class Model:
                 else:
                     model_images.append(image)
                     model_masks.append(mask)
-                    model_labels.append(labels)
+                    model_labels.append(label)
 
         self.test_database = test_images, test_masks, test_labels
 
