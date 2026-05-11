@@ -20,11 +20,11 @@ class ImageLoader:
         if not isinstance(names, (list, tuple)):
             raise TypeError("names must be a list or tuple")
 
-        masks = {}
+        masks = []
 
         for name in names:
             path = self.mask_root / name
-            masks[name] = self._load_image(path, grayscale=True)
+            masks.append(self._load_image(path, grayscale=True))
 
         return masks
 
@@ -57,11 +57,11 @@ class ImageLoader:
         if not isinstance(names, (list, tuple)):
             raise TypeError("names must be a list or tuple")
 
-        images = {}
+        images = []
 
         for name in names:
             path = self.image_root / name
-            images[name] = self._load_image(path, grayscale=False)
+            images.append(self._load_image(path, grayscale=False))
 
         return images
 
