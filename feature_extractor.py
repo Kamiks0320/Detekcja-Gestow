@@ -2,34 +2,184 @@ import cv2
 import numpy as np
 
 
+
+FEATURE_NAMES = [
+    "defect_count",
+    "mean_defect_depth",
+    "max_defect_depth",
+    "min_defect_depth",
+    "std_defect_depth",
+    "area_contour",
+    "area_hull",
+    "solidity",
+    "perimeter",
+    "aspect_ratio",
+    "extent",
+    "circularity",
+]
+
 class FeatureExtractor:
-    def __init__(self, image, min_contour_area=500):
+    def __init__(
+        self,
+        image,
+        mask_name="unknown_mask",
+        output_size=256,
+        min_contour_area=500
+    ):
         self.image = image
+        self.mask_name = mask_name
+        self.output_size = output_size
         self.min_contour_area = min_contour_area
         self.kernel = np.ones((3, 3), np.uint8)
 
     def process(self):
-        gray = self.image
-        gray = cv2.copyMakeBorder(
-            gray, 2, 2, 2, 2, borderType=cv2.BORDER_CONSTANT, value=0
+        gray = self._prepare_gray_image(self.image)
+
+        binary, cnt = self._make_binary_candidate(gray)
+
+        features, defect_list, contour_vis, defect_vis = self._extract_features(
+            gray=gray,
+            binary=binary,
+            cnt=cnt
         )
 
-        binary, contours = self._make_binary_candidates(gray)
+        vis = {
+            "gray": gray,
+            "binary": binary,
+            "contour_vis": contour_vis,
+            "defect_vis": defect_vis,
+            "defect_list": defect_list,
+        }
 
-        cnt = max(contours, key=cv2.contourArea)
-        area_cnt = cv2.contourArea(cnt)
+        return vis, features
 
-        if area_cnt < self.min_contour_area:
+    def _prepare_gray_image(self, image):
+        if image is None:
+            raise ValueError("Obraz wejściowy jest pusty.")
+
+        if len(image.shape) == 3:
+            gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        else:
+            gray = image.copy()
+
+        gray = cv2.resize(
+            gray,
+            (self.output_size, self.output_size),
+            interpolation=cv2.INTER_NEAREST
+        )
+
+        #gray = cv2.copyMakeBorder(
+        #    gray,
+        #    2, 2, 2, 2,
+        #    borderType=cv2.BORDER_CONSTANT,
+        #    value=0
+        #)
+        
+        return gray
+
+
+
+    def _find_contours(self, binary_img):
+        found = cv2.findContours(
+            binary_img,
+            cv2.RETR_EXTERNAL,
+            cv2.CHAIN_APPROX_SIMPLE
+        )
+
+        contours = found[0] if len(found) == 2 else found[1]
+        return contours
+
+    def _make_binary_candidate(self, gray):
+        _, th = cv2.threshold(
+            gray,
+            0,
+            255,
+            cv2.THRESH_BINARY + cv2.THRESH_OTSU
+        )
+
+        candidates = [
+            th,
+            cv2.bitwise_not(th)
+        ]
+
+        scored = []
+        img_area = gray.shape[0] * gray.shape[1]
+
+        for bin_img in candidates:
+            bin_img = cv2.morphologyEx(
+                bin_img,
+                cv2.MORPH_OPEN,
+                self.kernel,
+                iterations=1
+            )
+
+            bin_img = cv2.morphologyEx(
+                bin_img,
+                cv2.MORPH_CLOSE,
+                self.kernel,
+                iterations=2
+            )
+
+            contours = self._find_contours(bin_img)
+
+            if not contours:
+                continue
+
+            cnt = max(contours, key=cv2.contourArea)
+            area = cv2.contourArea(cnt)
+
+            if area < self.min_contour_area:
+                continue
+
+            penalty = 0
+
+            if area > 0.95 * img_area:
+                penalty = img_area
+
+            score = area - penalty
+
+            scored.append({
+                "score": score,
+                "binary": bin_img,
+                "contour": cnt
+            })
+
+        if not scored:
+            raise ValueError("Nie udało się znaleźć sensownego konturu w masce.")
+
+        scored.sort(key=lambda x: x["score"], reverse=True)
+
+        return scored[0]["binary"], scored[0]["contour"]
+
+    def _extract_features(self, gray, binary, cnt):
+        area_contour = cv2.contourArea(cnt)
+
+        if area_contour < self.min_contour_area:
             raise ValueError("Największy kontur jest zbyt mały.")
+
+        perimeter = cv2.arcLength(cnt, True)
+
+        hull_points = cv2.convexHull(cnt)
+        area_hull = cv2.contourArea(hull_points)
 
         epsilon = 0.002 * cv2.arcLength(cnt, True)
         approx = cv2.approxPolyDP(cnt, epsilon, True)
 
-        hull_points = cv2.convexHull(cnt)
         hull_indices = cv2.convexHull(approx, returnPoints=False)
 
+        x, y, w, h = cv2.boundingRect(cnt)
+
+        solidity = area_contour / area_hull if area_hull > 0 else 0.0
+        aspect_ratio = w / h if h > 0 else 0.0
+        extent = area_contour / (w * h) if w * h > 0 else 0.0
+
+        circularity = 0.0
+        if perimeter > 0:
+            circularity = (4 * np.pi * area_contour) / (perimeter ** 2)
+
         defects = None
-        if len(approx) >= 4 and len(hull_indices) >= 4:
+
+        if hull_indices is not None and len(hull_indices) >= 4 and len(approx) >= 4:
             defects = cv2.convexityDefects(approx, hull_indices)
 
         contour_vis = cv2.cvtColor(gray, cv2.COLOR_GRAY2BGR)
@@ -42,6 +192,7 @@ class FeatureExtractor:
         cv2.drawContours(defect_vis, [hull_points], -1, (255, 0, 0), 2)
 
         defect_list = []
+
         if defects is not None:
             for i in range(defects.shape[0]):
                 s, e, f, d = defects[i, 0]
@@ -49,65 +200,69 @@ class FeatureExtractor:
                 start = tuple(approx[s][0])
                 end = tuple(approx[e][0])
                 far = tuple(approx[f][0])
-                depth_px = d / 256.0  # zgodnie z OpenCV fixpt_depth
 
-                # Rysowanie: linia hull + punkt defect
+                depth_px = d / 256.0
+
                 cv2.line(defect_vis, start, end, (255, 0, 0), 2)
                 cv2.circle(defect_vis, far, 5, (0, 0, 255), -1)
 
-                defect_list.append(
-                    {"start": start, "end": end, "far": far, "depth_px": depth_px}
-                )
+                defect_list.append({
+                    "start": start,
+                    "end": end,
+                    "far": far,
+                    "depth_px": depth_px
+                })
 
-        return {
-            "gray": gray,
-            "binary": binary,
-            "contour_vis": contour_vis,
-            "defect_vis": defect_vis,
-        }, defect_list
+        depths = [d["depth_px"] for d in defect_list]
 
-    def _find_contours(self, binary_img):
-        found = cv2.findContours(binary_img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-        contours = found[0] if len(found) == 2 else found[1]
-        return contours
+        if len(depths) > 0:
+            mean_depth = float(np.mean(depths))
+            max_depth = float(np.max(depths))
+            min_depth = float(np.min(depths))
+            std_depth = float(np.std(depths))
+        else:
+            mean_depth = 0.0
+            max_depth = 0.0
+            min_depth = 0.0
+            std_depth = 0.0
 
-    def _make_binary_candidates(self, gray):
-        # Dwie wersje: oryginalna binarizacja i odwrócona.
-        # Wybieramy tę, w której największy kontur wygląda sensownie.
-        _, th = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-        candidates = [th, cv2.bitwise_not(th)]
+        features = {
+            "defect_count": len(defect_list),
+            "mean_defect_depth": mean_depth,
+            "max_defect_depth": max_depth,
+            "min_defect_depth": min_depth,
+            "std_defect_depth": std_depth,
+            "area_contour": float(area_contour),
+            "area_hull": float(area_hull),
+            "solidity": float(solidity),
+            "perimeter": float(perimeter),
+            "aspect_ratio": float(aspect_ratio),
+            "extent": float(extent),
+            "circularity": float(circularity),
+        }
 
-        scored = []
-        img_area = gray.shape[0] * gray.shape[1]
+        return features, defect_list, contour_vis, defect_vis
+    @staticmethod
+    def features_to_vector(features):
+        return [float(features[name]) for name in FEATURE_NAMES]
+    
 
-        for bin_img in candidates:
-            bin_img = cv2.morphologyEx(
-                bin_img, cv2.MORPH_OPEN, self.kernel, iterations=1
-            )
-            bin_img = cv2.morphologyEx(
-                bin_img, cv2.MORPH_CLOSE, self.kernel, iterations=2
-            )
-
-            contours = self._find_contours(bin_img)
-            if not contours:
-                continue
-
-            max_contour = max(contours, key=cv2.contourArea)
-            area = cv2.contourArea(max_contour)
-
-            if area < self.min_contour_area:
-                continue
-
-            # Kara za kontur prawie równy całemu obrazowi.
-            penalty = 0
-            if area > 0.95 * img_area:
-                penalty = img_area
-
-            score = area - penalty
-            scored.append((score, bin_img, contours))
-
-        if not scored:
-            raise ValueError("Nie udało się znaleźć sensownego konturu w masce.")
-
-        scored.sort(key=lambda x: x[0], reverse=True)
-        return scored[0][1], scored[0][2]
+#mask = cv2.imread(r"masks\1_P_hgr1_id08_2.bmp", cv2.IMREAD_GRAYSCALE)
+#
+#extractor = FeatureExtractor(
+#    image=mask,
+#    mask_name="1_P_hgr1_id08_2.bmp"
+#)
+#
+#vis_results, features = extractor.process()
+#
+#print(features)
+#
+#
+#cv2.imshow("Gray", vis_results["gray"])
+#cv2.imshow("Binary", vis_results["binary"])
+#cv2.imshow("Contour + Hull", vis_results["contour_vis"])
+#cv2.imshow("Defects", vis_results["defect_vis"])    
+#
+#cv2.waitKey(0)
+#cv2.destroyAllWindows()
