@@ -42,6 +42,7 @@ class ImageLoader:
 
         if len(files) == 0:
             raise FileNotFoundError(f"No mask files found in: {self.mask_root}")
+        files = sorted(files)
 
         sample_n = min(n, len(files))
         random_files = random.sample(files, sample_n)
@@ -86,6 +87,7 @@ class ImageLoader:
         if len(files) == 0:
             raise FileNotFoundError(f"No image files found in: {self.image_root}")
 
+        files = sorted(files)
         sample_n = min(n, len(files))
         random_files = random.sample(files, sample_n)
 
@@ -108,6 +110,7 @@ class ImageLoader:
 
         if len(image_files) == 0:
             raise FileNotFoundError(f"No image files found in: {self.image_root}")
+        image_files = sorted(image_files)
 
         images = []
         masks = []
