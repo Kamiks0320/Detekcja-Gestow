@@ -103,10 +103,9 @@ class ImageLoader:
         return masks, file_names, labels
 
     def load_all(self):
-        extensions = ["*.jpg", "*.JPG"]
+        extension = "*.jpg"
         image_files = []
-        for ext in extensions:
-            image_files.extend(self.image_root.glob(f"**/{ext}"))
+        image_files.extend(self.image_root.glob(f"**/{extension}"))
 
         if len(image_files) == 0:
             raise FileNotFoundError(f"No image files found in: {self.image_root}")

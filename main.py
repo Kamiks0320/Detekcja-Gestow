@@ -6,7 +6,7 @@ from model import Model
 loader = ImageLoader()
 images, masks, file_names, labels = loader.load_all()
 
-model = Model((images, masks, labels, file_names), 0.1)
+model = Model((images, masks, labels))
 # print(model.feature_database[0])
 # print(model.feature_database[1])
 
