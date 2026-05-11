@@ -10,5 +10,5 @@ model = Model((images, masks, labels))
 print(model.feature_database[0])
 print(model.feature_database[1])
 
-# correct_count, incorrect_count = model.Test()
-# print(correct_count, incorrect_count)
+correct_count, incorrect_count = model.Test()
+print(correct_count, incorrect_count)

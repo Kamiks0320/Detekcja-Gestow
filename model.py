@@ -4,7 +4,6 @@ from feature_extractor import FeatureExtractor
 class Model:
     def __init__(self, image_db, test_percentage=0.1):
         self.feature_database = [[], []]
-        self.test_percentage = test_percentage
 
         images, masks, labels = image_db
         db_labeled = {}
@@ -14,6 +13,7 @@ class Model:
             db_labeled[labels[i]].append(i)
 
         test_images = []
+        test_masks = []
         test_labels = []
         model_images = []
         model_masks = []
@@ -26,13 +26,14 @@ class Model:
                 mask = masks[db_labeled[label][j]]
                 if j < test_count:
                     test_images.append(image)
+                    test_masks.append(mask)
                     test_labels.append(label)
                 else:
                     model_images.append(image)
                     model_masks.append(mask)
                     model_labels.append(labels)
 
-        self.test_database = test_images, test_labels
+        self.test_database = test_images, test_masks, test_labels
 
         for i in range(len(model_images)):
             extractor = FeatureExtractor(model_masks[i])
@@ -43,33 +44,31 @@ class Model:
     def _dist(self, featuresA, featuresB):
         sqr_sum = 0
         for i in range(len(featuresA)):
-            sqr_sum = (featuresA[i] - featuresB[i]) ** 2
+            sqr_sum += (featuresA[i] - featuresB[i]) ** 2
 
         return sqr_sum
 
     def Classify(self, image):
-        # create Mask
-        mask = Mask(image)
-        extractor = FeatureExtractor(mask)
+        extractor = FeatureExtractor(image)
         vis, features = extractor.process()
 
         closest = 0
-        min_dist = _dist(features, feature_database[1][closest])
-        for i in range(len(feature_database[1])):
-            dist = _dist(features, feature_database[1][i])
+        min_dist = self._dist(features, self.feature_database[1][closest])
+        for i in range(len(self.feature_database[1])):
+            dist = self._dist(features, self.feature_database[1][i])
             if dist < min_dist:
                 closest = i
                 min_dist = dist
 
-        return feature_database[0][closest]
+        return self.feature_database[0][closest]
 
     def Test(self):
-        images, labels = self.test_database
+        images, masks, labels = self.test_database
 
         correct_count = 0
         incorrect_count = 0
         for i in range(len(images)):
-            label = self.Classify(images[i])
+            label = self.Classify(masks[i])
             correct_count += label == labels[i]
             incorrect_count += label != labels[i]
 
