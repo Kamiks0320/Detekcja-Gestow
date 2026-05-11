@@ -4,7 +4,7 @@ import cv2
 
 
 class ImageLoader:
-    def __init__(self, image_root="original_images", mask_root="masks"):
+    def __init__(self, image_root="original_images", mask_root="masks_cropped"):
         self.image_root = Path(image_root)
         self.mask_root = Path(mask_root)
 
