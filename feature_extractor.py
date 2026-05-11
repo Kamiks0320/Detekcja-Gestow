@@ -45,12 +45,9 @@ class FeatureExtractor:
             gray, (self.output_size, self.output_size), interpolation=cv2.INTER_NEAREST
         )
 
-        # gray = cv2.copyMakeBorder(
-        #    gray,
-        #    2, 2, 2, 2,
-        #    borderType=cv2.BORDER_CONSTANT,
-        #    value=0
-        # )
+        gray = cv2.copyMakeBorder(
+            gray, 2, 2, 2, 2, borderType=cv2.BORDER_CONSTANT, value=255
+        )
 
         return gray
 
@@ -217,4 +214,3 @@ class FeatureExtractor:
 #
 # cv2.waitKey(0)
 # cv2.destroyAllWindows()
-
