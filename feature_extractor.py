@@ -1,8 +1,6 @@
 import cv2
 import numpy as np
 
-
-
 FEATURE_NAMES = [
     "defect_count",
     "mean_defect_depth",
@@ -18,13 +16,10 @@ FEATURE_NAMES = [
     "circularity",
 ]
 
+
 class FeatureExtractor:
     def __init__(
-        self,
-        image,
-        mask_name="unknown_mask",
-        output_size=256,
-        min_contour_area=500
+        self, image, mask_name="unknown_mask", output_size=256, min_contour_area=500
     ):
         self.image = image
         self.mask_name = mask_name
@@ -34,24 +29,8 @@ class FeatureExtractor:
 
     def process(self):
         gray = self._prepare_gray_image(self.image)
-
         binary, cnt = self._make_binary_candidate(gray)
-
-        features, defect_list, contour_vis, defect_vis = self._extract_features(
-            gray=gray,
-            binary=binary,
-            cnt=cnt
-        )
-
-        vis = {
-            "gray": gray,
-            "binary": binary,
-            "contour_vis": contour_vis,
-            "defect_vis": defect_vis,
-            "defect_list": defect_list,
-        }
-
-        return vis, features
+        return self._extract_features(gray=gray, binary=binary, cnt=cnt)
 
     def _prepare_gray_image(self, image):
         if image is None:
@@ -63,61 +42,39 @@ class FeatureExtractor:
             gray = image.copy()
 
         gray = cv2.resize(
-            gray,
-            (self.output_size, self.output_size),
-            interpolation=cv2.INTER_NEAREST
+            gray, (self.output_size, self.output_size), interpolation=cv2.INTER_NEAREST
         )
 
-        #gray = cv2.copyMakeBorder(
+        # gray = cv2.copyMakeBorder(
         #    gray,
         #    2, 2, 2, 2,
         #    borderType=cv2.BORDER_CONSTANT,
         #    value=0
-        #)
-        
+        # )
+
         return gray
 
-
-
     def _find_contours(self, binary_img):
-        found = cv2.findContours(
-            binary_img,
-            cv2.RETR_EXTERNAL,
-            cv2.CHAIN_APPROX_SIMPLE
-        )
+        found = cv2.findContours(binary_img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
         contours = found[0] if len(found) == 2 else found[1]
         return contours
 
     def _make_binary_candidate(self, gray):
-        _, th = cv2.threshold(
-            gray,
-            0,
-            255,
-            cv2.THRESH_BINARY + cv2.THRESH_OTSU
-        )
+        _, th = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
 
-        candidates = [
-            th,
-            cv2.bitwise_not(th)
-        ]
+        candidates = [th, cv2.bitwise_not(th)]
 
         scored = []
         img_area = gray.shape[0] * gray.shape[1]
 
         for bin_img in candidates:
             bin_img = cv2.morphologyEx(
-                bin_img,
-                cv2.MORPH_OPEN,
-                self.kernel,
-                iterations=1
+                bin_img, cv2.MORPH_OPEN, self.kernel, iterations=1
             )
 
             bin_img = cv2.morphologyEx(
-                bin_img,
-                cv2.MORPH_CLOSE,
-                self.kernel,
-                iterations=2
+                bin_img, cv2.MORPH_CLOSE, self.kernel, iterations=2
             )
 
             contours = self._find_contours(bin_img)
@@ -138,11 +95,7 @@ class FeatureExtractor:
 
             score = area - penalty
 
-            scored.append({
-                "score": score,
-                "binary": bin_img,
-                "contour": cnt
-            })
+            scored.append({"score": score, "binary": bin_img, "contour": cnt})
 
         if not scored:
             raise ValueError("Nie udało się znaleźć sensownego konturu w masce.")
@@ -175,7 +128,7 @@ class FeatureExtractor:
 
         circularity = 0.0
         if perimeter > 0:
-            circularity = (4 * np.pi * area_contour) / (perimeter ** 2)
+            circularity = (4 * np.pi * area_contour) / (perimeter**2)
 
         defects = None
 
@@ -206,12 +159,9 @@ class FeatureExtractor:
                 cv2.line(defect_vis, start, end, (255, 0, 0), 2)
                 cv2.circle(defect_vis, far, 5, (0, 0, 255), -1)
 
-                defect_list.append({
-                    "start": start,
-                    "end": end,
-                    "far": far,
-                    "depth_px": depth_px
-                })
+                defect_list.append(
+                    {"start": start, "end": end, "far": far, "depth_px": depth_px}
+                )
 
         depths = [d["depth_px"] for d in defect_list]
 
@@ -226,43 +176,45 @@ class FeatureExtractor:
             min_depth = 0.0
             std_depth = 0.0
 
-        features = {
-            "defect_count": len(defect_list),
-            "mean_defect_depth": mean_depth,
-            "max_defect_depth": max_depth,
-            "min_defect_depth": min_depth,
-            "std_defect_depth": std_depth,
-            "area_contour": float(area_contour),
-            "area_hull": float(area_hull),
-            "solidity": float(solidity),
-            "perimeter": float(perimeter),
-            "aspect_ratio": float(aspect_ratio),
-            "extent": float(extent),
-            "circularity": float(circularity),
-        }
+        features = [
+            len(defect_list),
+            mean_depth,
+            max_depth,
+            min_depth,
+            std_depth,
+            float(area_contour),
+            float(area_hull),
+            float(solidity),
+            float(perimeter),
+            float(aspect_ratio),
+            float(extent),
+            float(circularity),
+        ]
 
-        return features, defect_list, contour_vis, defect_vis
+        return {"contour": contour_vis, "defects": defect_vis}, features
+
     @staticmethod
     def features_to_vector(features):
         return [float(features[name]) for name in FEATURE_NAMES]
-    
 
-#mask = cv2.imread(r"masks\1_P_hgr1_id08_2.bmp", cv2.IMREAD_GRAYSCALE)
+
+# mask = cv2.imread(r"masks\1_P_hgr1_id08_2.bmp", cv2.IMREAD_GRAYSCALE)
 #
-#extractor = FeatureExtractor(
+# extractor = FeatureExtractor(
 #    image=mask,
 #    mask_name="1_P_hgr1_id08_2.bmp"
-#)
+# )
 #
-#vis_results, features = extractor.process()
+# vis_results, features = extractor.process()
 #
-#print(features)
+# print(features)
 #
 #
-#cv2.imshow("Gray", vis_results["gray"])
-#cv2.imshow("Binary", vis_results["binary"])
-#cv2.imshow("Contour + Hull", vis_results["contour_vis"])
-#cv2.imshow("Defects", vis_results["defect_vis"])    
+# cv2.imshow("Gray", vis_results["gray"])
+# cv2.imshow("Binary", vis_results["binary"])
+# cv2.imshow("Contour + Hull", vis_results["contour_vis"])
+# cv2.imshow("Defects", vis_results["defect_vis"])
 #
-#cv2.waitKey(0)
-#cv2.destroyAllWindows()
+# cv2.waitKey(0)
+# cv2.destroyAllWindows()
+

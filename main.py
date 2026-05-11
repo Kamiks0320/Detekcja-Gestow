@@ -1,16 +1,14 @@
 from image_loader import ImageLoader
 from feature_extractor import FeatureExtractor
 from presenter import Presenter
+from model import Model
 
 loader = ImageLoader()
-masks, mask_file_names = loader.load_masks_random(5)
+images, masks, file_names, labels = loader.load_all()
 
-for i in range(len(masks)):
-    featureExtractor = FeatureExtractor(masks[i])
-    vis_results, features = featureExtractor.process()
+model = Model((images, masks, labels))
+print(model.feature_database[0])
+print(model.feature_database[1])
 
-    presenter = Presenter()
-
-    presenter.show(
-        mask_file_names[i] + "\nDefects: " + str(len(features)), vis_results, 2
-    )
+# correct_count, incorrect_count = model.Test()
+# print(correct_count, incorrect_count)

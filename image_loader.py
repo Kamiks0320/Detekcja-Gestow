@@ -4,7 +4,7 @@ import cv2
 
 
 class ImageLoader:
-    def __init__(self, image_root="original_images", mask_root="masks_cropped"):
+    def __init__(self, image_root="original_images", mask_root="masks"):
         self.image_root = Path(image_root)
         self.mask_root = Path(mask_root)
 
@@ -21,12 +21,14 @@ class ImageLoader:
             raise TypeError("names must be a list or tuple")
 
         masks = []
+        labels = []
 
         for name in names:
             path = self.mask_root / name
             masks.append(self._load_image(path, grayscale=True))
+            labels.append(name[0])
 
-        return masks
+        return masks, labels
 
     def load_masks_random(self, n):
         if not isinstance(n, int):
@@ -46,24 +48,28 @@ class ImageLoader:
 
         masks = []
         file_names = []
+        labels = []
 
         for path in random_files:
             masks.append(self._load_image(path, grayscale=True))
             file_names.append(path.name)
+            labels.append(path.name[0])
 
-        return masks, file_names
+        return masks, file_names, labels
 
     def load_images(self, names):
         if not isinstance(names, (list, tuple)):
             raise TypeError("names must be a list or tuple")
 
         images = []
+        labels = []
 
         for name in names:
             path = self.image_root / name
             images.append(self._load_image(path, grayscale=False))
+            labels.append(name[0])
 
-        return images
+        return images, labels
 
     def load_images_random(self, n):
         if not isinstance(n, int):
@@ -85,12 +91,41 @@ class ImageLoader:
 
         images = []
         file_names = []
+        labels = []
 
         for path in random_files:
             images.append(self._load_image(path, grayscale=False))
             file_names.append(path.name)
+            labels.append(path.name[0])
 
-        return masks, file_names
+        return masks, file_names, labels
+
+    def load_all(self):
+        extensions = ["*.jpg", "*.JPG"]
+        image_files = []
+        for ext in extensions:
+            image_files.extend(self.image_root.glob(f"**/{ext}"))
+
+        if len(image_files) == 0:
+            raise FileNotFoundError(f"No image files found in: {self.image_root}")
+
+        images = []
+        masks = []
+        file_names = []
+        labels = []
+
+        for image_path in image_files:
+
+            mask_path = (self.mask_root / image_path.name).with_suffix(".bmp")
+            if not mask_path.exists():
+                raise FileNotFoundError(f"Image not found: {mask_path}")
+
+            images.append(self._load_image(image_path, grayscale=False))
+            masks.append(self._load_image(mask_path, grayscale=True))
+            file_names.append(image_path.name)
+            labels.append(image_path.name[0])
+
+        return images, masks, file_names, labels
 
     def _load_image(self, image_path, grayscale=True):
         if not Path(image_path).exists():
