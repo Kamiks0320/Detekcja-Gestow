@@ -11,7 +11,7 @@ class FeatureExtractor:
     def process(self):
         gray = self.image
         gray = cv2.copyMakeBorder(
-            gray, 2, 2, 2, 2, borderType=cv2.BORDER_CONSTANT, value=255
+            gray, 2, 2, 2, 2, borderType=cv2.BORDER_CONSTANT, value=0
         )
 
         binary, contours = self._make_binary_candidates(gray)

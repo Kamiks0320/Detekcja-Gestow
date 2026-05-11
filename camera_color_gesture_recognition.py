@@ -48,7 +48,8 @@ ROI_X2 = 520
 ROI_Y2 = 420
 
 # debug
-PRINT_FEATURES = True
+# PRINT_FEATURES = True
+PRINT_FEATURES = False
 PRINT_EVERY_N_FRAMES = 20
 def print_features(features, database, frame_counter):
     if not PRINT_FEATURES:
