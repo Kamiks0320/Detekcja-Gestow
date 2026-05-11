@@ -1,4 +1,5 @@
 from feature_extractor import FeatureExtractor
+from presenter import Presenter
 
 
 class Model:
@@ -38,6 +39,7 @@ class Model:
         for i in range(len(model_images)):
             extractor = FeatureExtractor(model_masks[i])
             vis, features = extractor.process()
+
             self.feature_database[0].append(model_labels[i])
             self.feature_database[1].append(features)
 
@@ -60,7 +62,7 @@ class Model:
                 closest = i
                 min_dist = dist
 
-        return self.feature_database[0][closest]
+        return vis, self.feature_database[0][closest]
 
     def Test(self):
         images, masks, labels = self.test_database
@@ -68,7 +70,7 @@ class Model:
         correct_count = 0
         incorrect_count = 0
         for i in range(len(images)):
-            label = self.Classify(masks[i])
+            vis, label = self.Classify(masks[i])
             correct_count += label == labels[i]
             incorrect_count += label != labels[i]
 
