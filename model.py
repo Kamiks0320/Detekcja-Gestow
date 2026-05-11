@@ -28,13 +28,14 @@ class Model:
                     test_images.append(image)
                     test_masks.append(mask)
                     test_labels.append(label)
-                    print(file_names[j])
+                    print(file_names[db_labeled[label][j]])
                 else:
                     model_images.append(image)
                     model_masks.append(mask)
                     model_labels.append(label)
 
         self.test_database = test_images, test_masks, test_labels
+        print(test_labels)
 
         for i in range(len(model_images)):
             extractor = FeatureExtractor(model_masks[i])
