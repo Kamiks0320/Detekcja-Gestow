@@ -1,6 +1,8 @@
 from feature_extractor import FEATURE_NAMES, FeatureExtractor
 from presenter import Presenter
+from binarizer import Binarizer
 import random
+
 
 class Model:
     def __init__(self, image_db, test_percentage=0.1):
@@ -8,7 +10,19 @@ class Model:
 
         images, masks, labels = image_db
         db_labeled = {}
+        binarizer = Binarizer()
+        self.lower_hsv, self.upper_hsv = binarizer.get_range_from_mask(
+            images[0], masks[0]
+        )
         for i in range(len(images)):
+            lower_hsv, upper_hsv = binarizer.get_range_from_mask(images[i], masks[i])
+            self.lower_hsv[0] = min(self.lower_hsv[0], lower_hsv[0])
+            self.lower_hsv[1] = min(self.lower_hsv[1], lower_hsv[1])
+            self.lower_hsv[2] = min(self.lower_hsv[2], lower_hsv[2])
+            self.upper_hsv[0] = max(self.upper_hsv[0], upper_hsv[0])
+            self.upper_hsv[1] = max(self.upper_hsv[1], upper_hsv[1])
+            self.upper_hsv[2] = max(self.upper_hsv[2], upper_hsv[2])
+
             if labels[i] not in db_labeled:
                 db_labeled[labels[i]] = []
             db_labeled[labels[i]].append(i)
@@ -85,8 +99,14 @@ class Model:
         correct_count = 0
         incorrect_count = 0
 
+        binarizer = Binarizer()
         for i in range(len(images)):
-            vis, features, predicted_label = self.Classify(masks[i])
+            mask = binarizer.get_mask_from_range(
+                self.lower_hsv, self.upper_hsv, images[i]
+            )
+            vis, features, predicted_label = self.Classify(mask)
+            vis["created_mask"] = mask
+            vis["mask"] = masks[i]
 
             true_label = labels[i]
 
@@ -95,6 +115,8 @@ class Model:
             print(f"TRUE LABEL     : {true_label}")
             print(f"PREDICTED LABEL: {predicted_label}")
             print("FEATURES:")
+            presenter = Presenter()
+            presenter.show(predicted_label, vis, 2)
 
             for name, value in zip(FEATURE_NAMES, features):
                 print(f"{name:22s}: {value}")
