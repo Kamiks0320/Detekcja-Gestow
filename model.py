@@ -1,6 +1,6 @@
-from feature_extractor import FeatureExtractor
+from feature_extractor import FEATURE_NAMES, FeatureExtractor
 from presenter import Presenter
-
+import random
 
 class Model:
     def __init__(self, image_db, test_percentage=0.1):
@@ -21,10 +21,21 @@ class Model:
         model_labels = []
 
         for label in db_labeled:
-            test_count = int(len(db_labeled[label]) * test_percentage)
-            for j in range(len(db_labeled[label])):
-                image = images[db_labeled[label][j]]
-                mask = masks[db_labeled[label][j]]
+            indices = db_labeled[label].copy()
+            random.shuffle(indices)
+
+            if len(indices) < 2:
+                raise ValueError(f"Za mało próbek dla klasy {label}. Minimum to 2.")
+
+            test_count = max(1, int(len(indices) * test_percentage))
+
+            if test_count >= len(indices):
+                test_count = len(indices) - 1
+
+            for j, idx in enumerate(indices):
+                image = images[idx]
+                mask = masks[idx]
+
                 if j < test_count:
                     test_images.append(image)
                     test_masks.append(mask)
@@ -56,22 +67,39 @@ class Model:
 
         closest = 0
         min_dist = self._dist(features, self.feature_database[1][closest])
+
         for i in range(len(self.feature_database[1])):
             dist = self._dist(features, self.feature_database[1][i])
+
             if dist < min_dist:
                 closest = i
                 min_dist = dist
 
-        return vis, self.feature_database[0][closest]
+        predicted_label = self.feature_database[0][closest]
+
+        return vis, features, predicted_label
 
     def Test(self):
         images, masks, labels = self.test_database
 
         correct_count = 0
         incorrect_count = 0
+
         for i in range(len(images)):
-            vis, label = self.Classify(masks[i])
-            correct_count += label == labels[i]
-            incorrect_count += label != labels[i]
+            vis, features, predicted_label = self.Classify(masks[i])
+
+            true_label = labels[i]
+
+            print("=" * 60)
+            print(f"TEST SAMPLE: {i}")
+            print(f"TRUE LABEL     : {true_label}")
+            print(f"PREDICTED LABEL: {predicted_label}")
+            print("FEATURES:")
+
+            for name, value in zip(FEATURE_NAMES, features):
+                print(f"{name:22s}: {value}")
+
+            correct_count += predicted_label == true_label
+            incorrect_count += predicted_label != true_label
 
         return correct_count, incorrect_count

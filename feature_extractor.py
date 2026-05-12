@@ -2,15 +2,15 @@ import cv2
 import numpy as np
 
 FEATURE_NAMES = [
-    "defect_count",
+    #"defect_count",
     "mean_defect_depth",
     "max_defect_depth",
-    "min_defect_depth",
+    #"min_defect_depth",
     "std_defect_depth",
-    "area_contour",
-    "area_hull",
+    #"area_contour",
+    #"area_hull",
     "solidity",
-    "perimeter",
+    #"perimeter",
     "aspect_ratio",
     "extent",
     "circularity",
@@ -151,7 +151,7 @@ class FeatureExtractor:
                 end = tuple(approx[e][0])
                 far = tuple(approx[f][0])
 
-                depth_px = d / 256.0
+                depth_px = (d / 256.0) / self.output_size
 
                 cv2.line(defect_vis, start, end, (255, 0, 0), 2)
                 cv2.circle(defect_vis, far, 5, (0, 0, 255), -1)
@@ -174,15 +174,15 @@ class FeatureExtractor:
             std_depth = 0.0
 
         features = [
-            len(defect_list),
+            # len(defect_list),
             mean_depth,
             max_depth,
-            min_depth,
+            # min_depth,
             std_depth,
-            float(area_contour),
-            float(area_hull),
+            # float(area_contour),
+            # float(area_hull),
             float(solidity),
-            float(perimeter),
+            # float(perimeter),
             float(aspect_ratio),
             float(extent),
             float(circularity),
