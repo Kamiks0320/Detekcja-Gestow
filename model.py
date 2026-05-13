@@ -55,6 +55,10 @@ class Model:
                     test_masks.append(mask)
                     test_labels.append(label)
                 else:
+                    binarizer = Binarizer()
+                    mask = binarizer.get_mask_from_range(
+                        self.lower_hsv, self.upper_hsv, image
+                    )
                     model_images.append(image)
                     model_masks.append(mask)
                     model_labels.append(label)
@@ -79,17 +83,22 @@ class Model:
         extractor = FeatureExtractor(image)
         vis, features = extractor.process()
 
-        closest = 0
-        min_dist = self._dist(features, self.feature_database[1][closest])
+        distances = []
 
-        for i in range(len(self.feature_database[1])):
-            dist = self._dist(features, self.feature_database[1][i])
+        for label, feature_vector in zip(
+            self.feature_database[0], self.feature_database[1]
+        ):
+            dist = self._dist(features, feature_vector)
+            distances.append((dist, label))
 
-            if dist < min_dist:
-                closest = i
-                min_dist = dist
+        distances.sort(key=lambda x: x[0])
+        nearest = distances[:3]
+        label_count = {}
 
-        predicted_label = self.feature_database[0][closest]
+        for _, label in nearest:
+            label_count[label] = label_count.get(label, 0) + 1
+
+        predicted_label = max(label_count, key=label_count.get)
 
         return vis, features, predicted_label
 
@@ -110,16 +119,16 @@ class Model:
 
             true_label = labels[i]
 
-            print("=" * 60)
-            print(f"TEST SAMPLE: {i}")
-            print(f"TRUE LABEL     : {true_label}")
-            print(f"PREDICTED LABEL: {predicted_label}")
-            print("FEATURES:")
-            presenter = Presenter()
-            presenter.show(predicted_label, vis, 2)
+            # print("=" * 60)
+            # print(f"TEST SAMPLE: {i}")
+            # print(f"TRUE LABEL     : {true_label}")
+            # print(f"PREDICTED LABEL: {predicted_label}")
+            # print("FEATURES:")
+            # presenter = Presenter()
+            # presenter.show(predicted_label, vis, 2)
 
-            for name, value in zip(FEATURE_NAMES, features):
-                print(f"{name:22s}: {value}")
+            # for name, value in zip(FEATURE_NAMES, features):
+            #     print(f"{name:22s}: {value}")
 
             correct_count += predicted_label == true_label
             incorrect_count += predicted_label != true_label
