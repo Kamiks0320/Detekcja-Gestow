@@ -3,17 +3,19 @@ import numpy as np
 
 FEATURE_NAMES = [
     # "defect_count",
+    "mean_dir_x",
+    "mean_dir_y",
     "mean_defect_depth",
     "max_defect_depth",
     # "min_defect_depth",
     "std_defect_depth",
     # "area_contour",
     # "area_hull",
-    "solidity",
+    # "solidity",
     # "perimeter",
     "aspect_ratio",
-    "extent",
-    "circularity",
+    # "extent",
+    # "circularity",
 ]
 
 
@@ -127,6 +129,8 @@ class FeatureExtractor:
 
         defect_list = []
 
+        defect_points = []
+        defect_center_off_mass = np.array([0, 0], dtype=np.float32)
         if defects is not None:
             for i in range(defects.shape[0]):
                 s, e, f, d = defects[i, 0]
@@ -134,6 +138,9 @@ class FeatureExtractor:
                 start = tuple(approx[s][0])
                 end = tuple(approx[e][0])
                 far = tuple(approx[f][0])
+
+                defect_center_off_mass += far
+                defect_points.append(far)
 
                 depth_px = d / area_contour
 
@@ -143,6 +150,15 @@ class FeatureExtractor:
                 defect_list.append(
                     {"start": start, "end": end, "far": far, "depth_px": depth_px}
                 )
+
+        defect_center_off_mass /= len(defect_points)
+        mean_dir = np.array([0, 0], dtype=np.float32)
+        for point in defect_points:
+            dir = defect_center_off_mass - point
+            x, y = dir
+            l = (x * x + y * y) ** 0.5
+            mean_dir += dir / l
+        mean_dir /= len(defect_points)
 
         depths = [d["depth_px"] for d in defect_list]
 
@@ -156,9 +172,13 @@ class FeatureExtractor:
             max_depth = 0.0
             min_depth = 0.0
             std_depth = 0.0
+        # mean_dir /= area_contour
+        mean_dir_x, mean_dir_y = mean_dir
 
         features = [
             # len(defect_list),
+            mean_dir_x,
+            mean_dir_y,
             mean_depth,
             max_depth,
             # min_depth,
