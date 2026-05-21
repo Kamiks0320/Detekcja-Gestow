@@ -26,6 +26,13 @@ class Binarizer:
         # OpenCV: piksele w zakresie HSV będą białe
         mask = cv2.inRange(hsv, lower_hsv, upper_hsv)
 
+        # morfologia, żeby pozbyć się szumu i wypełnić dziury
+        kernel_open = np.ones((3, 3), np.uint8)
+        kernel_close = np.ones((3, 3), np.uint8)
+
+        mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel_open)
+        mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel_close)
+
         # Twoje oryginalne maski mają dłoń czarną,
         # więc odwracamy wynik.
         if hand_as_black:
