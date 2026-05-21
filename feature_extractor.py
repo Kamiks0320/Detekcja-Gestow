@@ -61,14 +61,6 @@ class FeatureExtractor:
         img_area = gray.shape[0] * gray.shape[1]
 
         for bin_img in candidates:
-            bin_img = cv2.morphologyEx(
-                bin_img, cv2.MORPH_OPEN, self.kernel, iterations=1
-            )
-
-            bin_img = cv2.morphologyEx(
-                bin_img, cv2.MORPH_CLOSE, self.kernel, iterations=2
-            )
-
             contours = self._find_contours(bin_img)
 
             if not contours:
@@ -127,10 +119,14 @@ class FeatureExtractor:
         cv2.drawContours(defect_vis, [cnt], -1, (0, 255, 0), 2)
         cv2.drawContours(defect_vis, [hull_points], -1, (255, 0, 0), 2)
 
-        defect_list = []
-
-        defect_points = []
+        contour_mask = np.zeros(binary.shape[:2], dtype=np.uint8)
+        cv2.drawContours(contour_mask, [cnt], -1, 255, thickness=-1)
+        white_pixels_inside_contour_prc = (
+            cv2.countNonZero(cv2.bitwise_and(binary, contour_mask)) / area_contour
+        )
         defect_center_off_mass = np.array([0, 0], dtype=np.float32)
+        defect_list = []
+        defect_points = []
         if defects is not None:
             for i in range(defects.shape[0]):
                 s, e, f, d = defects[i, 0]
@@ -177,6 +173,7 @@ class FeatureExtractor:
 
         features = [
             # len(defect_list),
+            # white_pixels_inside_contour_prc > 0.03,
             mean_dir_x,
             mean_dir_y,
             mean_depth,

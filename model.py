@@ -92,7 +92,7 @@ class Model:
             distances.append((dist, label))
 
         distances.sort(key=lambda x: x[0])
-        nearest = distances[:3]
+        nearest = distances[:4]
         label_count = {}
 
         for _, label in nearest:
@@ -113,7 +113,7 @@ class Model:
             mask = binarizer.get_mask_from_range(
                 self.lower_hsv, self.upper_hsv, images[i]
             )
-            vis, features, predicted_label = self.Classify(mask)
+            vis, features, predicted_label = self.Classify(masks[i])
             vis["created_mask"] = mask
             vis["mask"] = masks[i]
 
