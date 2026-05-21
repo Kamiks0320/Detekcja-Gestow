@@ -2,15 +2,15 @@ import cv2
 import numpy as np
 
 FEATURE_NAMES = [
-    #"defect_count",
+    # "defect_count",
     "mean_defect_depth",
     "max_defect_depth",
-    #"min_defect_depth",
+    # "min_defect_depth",
     "std_defect_depth",
-    #"area_contour",
-    #"area_hull",
+    # "area_contour",
+    # "area_hull",
     "solidity",
-    #"perimeter",
+    # "perimeter",
     "aspect_ratio",
     "extent",
     "circularity",
@@ -18,13 +18,10 @@ FEATURE_NAMES = [
 
 
 class FeatureExtractor:
-    def __init__(
-        self, image, mask_name="unknown_mask", output_size=256, min_contour_area=500
-    ):
+    def __init__(self, image, mask_name="unknown_mask", min_contour_area_prc=0.01):
         self.image = image
         self.mask_name = mask_name
-        self.output_size = output_size
-        self.min_contour_area = min_contour_area
+        self.min_contour_area_prc = min_contour_area_prc
         self.kernel = np.ones((3, 3), np.uint8)
 
     def process(self):
@@ -40,10 +37,6 @@ class FeatureExtractor:
             gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
         else:
             gray = image.copy()
-
-        gray = cv2.resize(
-            gray, (self.output_size, self.output_size), interpolation=cv2.INTER_NEAREST
-        )
 
         gray = cv2.copyMakeBorder(
             gray, 2, 2, 2, 2, borderType=cv2.BORDER_CONSTANT, value=255
@@ -80,17 +73,12 @@ class FeatureExtractor:
                 continue
 
             cnt = max(contours, key=cv2.contourArea)
-            area = cv2.contourArea(cnt)
+            area_prc = cv2.contourArea(cnt) / img_area
 
-            if area < self.min_contour_area:
+            if area_prc < self.min_contour_area_prc or area_prc > 0.95:
                 continue
 
-            penalty = 0
-
-            if area > 0.95 * img_area:
-                penalty = img_area
-
-            score = area - penalty
+            score = area_prc
 
             scored.append({"score": score, "binary": bin_img, "contour": cnt})
 
@@ -103,10 +91,6 @@ class FeatureExtractor:
 
     def _extract_features(self, gray, binary, cnt):
         area_contour = cv2.contourArea(cnt)
-
-        if area_contour < self.min_contour_area:
-            raise ValueError("Największy kontur jest zbyt mały.")
-
         perimeter = cv2.arcLength(cnt, True)
 
         hull_points = cv2.convexHull(cnt)
@@ -151,7 +135,7 @@ class FeatureExtractor:
                 end = tuple(approx[e][0])
                 far = tuple(approx[f][0])
 
-                depth_px = (d / 256.0) / self.output_size
+                depth_px = d / area_contour
 
                 cv2.line(defect_vis, start, end, (255, 0, 0), 2)
                 cv2.circle(defect_vis, far, 5, (0, 0, 255), -1)
