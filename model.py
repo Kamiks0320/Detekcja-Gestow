@@ -56,9 +56,9 @@ class Model:
                     test_labels.append(label)
                 else:
                     binarizer = Binarizer()
-                    mask = binarizer.get_mask_from_range(
-                        self.lower_hsv, self.upper_hsv, image
-                    )
+                    # mask = binarizer.get_mask_from_range(
+                    #     self.lower_hsv, self.upper_hsv, image
+                    # )
                     model_images.append(image)
                     model_masks.append(mask)
                     model_labels.append(label)
@@ -119,6 +119,7 @@ class Model:
 
             true_label = labels[i]
 
+            # Presenter().show(true_label + " " + predicted_label, vis)
             # print("=" * 60)
             # print(f"TEST SAMPLE: {i}")
             # print(f"TRUE LABEL     : {true_label}")
