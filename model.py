@@ -106,7 +106,7 @@ class Model:
             true_labels.append(label)
             predicted_labels.append(prediction)
 
-            if show_visualization:
+            if show_visualization and label != prediction:
                 show_visualization(label + " " + prediction, vis, 2)
 
         return true_labels, predicted_labels

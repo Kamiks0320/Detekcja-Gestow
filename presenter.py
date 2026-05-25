@@ -1,9 +1,11 @@
 import matplotlib.pyplot as plt
 import cv2
 import numpy as np
+import uuid
+import os
 
 
-def show_visualization(subtitle, results, width=4):
+def show_visualization(subtitle, results, width=4, save=False):
     names = list(results.keys())
     images = list(results.values())
     n = len(images)
@@ -41,7 +43,13 @@ def show_visualization(subtitle, results, width=4):
 
     fig.suptitle(subtitle, fontsize=12)
     plt.tight_layout()
-    plt.show()
+    if not save:
+        plt.show()
+    else:
+        filename = f"./failed/{uuid.uuid4().hex}.png"
+        os.makedirs(os.path.dirname(filename), exist_ok=True)
+        fig.savefig(filename, dpi=300, bbox_inches="tight")
+        plt.close(fig)
 
 
 def plot_confusion_matrix(true, pred):
