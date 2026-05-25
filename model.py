@@ -1,6 +1,6 @@
-from feature_extractor import FEATURE_NAMES, FeatureExtractor
-from presenter import Presenter
-from binarizer import Binarizer
+from feature_extractor import extract_features
+from presenter import show_visualization
+from binarizer import get_mask_from_range, get_range_from_mask
 import random
 
 
@@ -10,12 +10,9 @@ class Model:
 
         images, masks, labels = image_db
         db_labeled = {}
-        binarizer = Binarizer()
-        self.lower_hsv, self.upper_hsv = binarizer.get_range_from_mask(
-            images[0], masks[0]
-        )
+        self.lower_hsv, self.upper_hsv = get_range_from_mask(images[0], masks[0])
         for i in range(len(images)):
-            lower_hsv, upper_hsv = binarizer.get_range_from_mask(images[i], masks[i])
+            lower_hsv, upper_hsv = get_range_from_mask(images[i], masks[i])
             self.lower_hsv[0] = min(self.lower_hsv[0], lower_hsv[0])
             self.lower_hsv[1] = min(self.lower_hsv[1], lower_hsv[1])
             self.lower_hsv[2] = min(self.lower_hsv[2], lower_hsv[2])
@@ -55,10 +52,6 @@ class Model:
                     test_masks.append(mask)
                     test_labels.append(label)
                 else:
-                    binarizer = Binarizer()
-                    # mask = binarizer.get_mask_from_range(
-                    #     self.lower_hsv, self.upper_hsv, image
-                    # )
                     model_images.append(image)
                     model_masks.append(mask)
                     model_labels.append(label)
@@ -66,8 +59,7 @@ class Model:
         self.test_database = test_images, test_masks, test_labels
 
         for i in range(len(model_images)):
-            extractor = FeatureExtractor(model_masks[i])
-            vis, features = extractor.process()
+            vis, features = extract_features(model_masks[i])
 
             self.feature_database[0].append(model_labels[i])
             self.feature_database[1].append(features)
@@ -80,8 +72,9 @@ class Model:
         return sqr_sum
 
     def Classify(self, image):
-        extractor = FeatureExtractor(image)
-        vis, features = extractor.process()
+        mask = get_mask_from_range(self.lower_hsv, self.upper_hsv, image)
+        vis, features = extract_features(mask)
+        vis["created_mask"] = mask
 
         distances = []
 
@@ -102,36 +95,18 @@ class Model:
 
         return vis, features, predicted_label
 
-    def Test(self):
-        images, masks, labels = self.test_database
+    def Test(self, show_visualization=False):
+        true_labels = []
+        predicted_labels = []
 
-        correct_count = 0
-        incorrect_count = 0
+        for image, mask, label in zip(*self.test_database):
+            vis, features, prediction = self.Classify(image)
+            vis["mask"] = mask
 
-        binarizer = Binarizer()
-        for i in range(len(images)):
-            mask = binarizer.get_mask_from_range(
-                self.lower_hsv, self.upper_hsv, images[i]
-            )
-            vis, features, predicted_label = self.Classify(masks[i])
-            vis["created_mask"] = mask
-            vis["mask"] = masks[i]
+            true_labels.append(label)
+            predicted_labels.append(prediction)
 
-            true_label = labels[i]
+            if show_visualization:
+                show_visualization(label + " " + prediction, vis, 2)
 
-            # Presenter().show(true_label + " " + predicted_label, vis)
-            # print("=" * 60)
-            # print(f"TEST SAMPLE: {i}")
-            # print(f"TRUE LABEL     : {true_label}")
-            # print(f"PREDICTED LABEL: {predicted_label}")
-            # print("FEATURES:")
-            # presenter = Presenter()
-            # presenter.show(predicted_label, vis, 2)
-
-            # for name, value in zip(FEATURE_NAMES, features):
-            #     print(f"{name:22s}: {value}")
-
-            correct_count += predicted_label == true_label
-            incorrect_count += predicted_label != true_label
-
-        return correct_count, incorrect_count
+        return true_labels, predicted_labels

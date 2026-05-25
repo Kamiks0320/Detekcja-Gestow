@@ -1,24 +1,33 @@
 from image_loader import ImageLoader
-from feature_extractor import FeatureExtractor
-from presenter import Presenter
+from presenter import show_visualization, plot_confusion_matrix
 from model import Model
-from classification_reporter import ClassificationReporter
+from concurrent.futures import ProcessPoolExecutor
 
 loader = ImageLoader()
 images, masks, file_names, labels = loader.load_all()
 
-correct_sum = 0
-incorrect_sum = 0
-reporter = ClassificationReporter()
-for i in range(150):
-    model = Model((images, masks, labels), test_percentage=0.1)
-    correct_count, incorrect_count = model.Test()
-    correct_sum += correct_count
-    incorrect_sum += incorrect_count
-    # print(correct_count, incorrect_count)
-    # print(correct_count / (incorrect_count + correct_count) * 100)
-    reporter.add_iteration(model)
-reporter.run()
-print(correct_sum, incorrect_sum)
-print(correct_sum / (incorrect_sum + correct_sum) * 100)
 
+def run_test(_):
+    model = Model((images, masks, labels), test_percentage=0.1)
+    return model.Test()
+
+
+if __name__ == "__main__":
+
+    with ProcessPoolExecutor() as executor:
+        results = list(executor.map(run_test, range(150)))
+
+    true_labels = []
+    predicted_labels = []
+
+    for true, pred in results:
+        true_labels.extend(true)
+        predicted_labels.extend(pred)
+
+    correct_sum = sum(t == p for t, p in zip(true_labels, predicted_labels))
+    incorrect_sum = len(true_labels) - correct_sum
+
+    print(correct_sum, incorrect_sum)
+    print(correct_sum / (correct_sum + incorrect_sum) * 100)
+
+    plot_confusion_matrix(true_labels, predicted_labels)
