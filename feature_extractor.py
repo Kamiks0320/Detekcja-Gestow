@@ -57,11 +57,11 @@ def extract_features(image):
         mean_dir += dir / np.linalg.norm(dir)
     mean_dir /= defects.shape[0]
 
-    # contour_mask = np.zeros(mask.shape[:2], dtype=np.uint8)
-    # cv2.drawContours(contour_mask, [cnt], -1, 255, thickness=-1)
-    # white_pixels_inside_contour_prc = (
-    #     cv2.countNonZero(cv2.bitwise_and(mask, contour_mask)) / area_contour
-    # )
+    contour_mask = np.zeros(mask.shape[:2], dtype=np.uint8)
+    cv2.drawContours(contour_mask, [cnt], -1, 255, thickness=-1)
+    black_pixels_inside_contour_prc = (
+        cv2.countNonZero(cv2.bitwise_and(mask, contour_mask)) / area_contour
+    )
 
     hull_points = cv2.convexHull(cnt)
     hull_indices = cv2.convexHull(cnt, returnPoints=False)
@@ -78,6 +78,7 @@ def extract_features(image):
 
     # Organize features and visualiztion.
     features = [
+        black_pixels_inside_contour_prc * 5,
         mean_dir_x,
         mean_dir_y,
         mean_depth,
