@@ -1,11 +1,12 @@
 import cv2
 import numpy as np
 
+
 # Funkcja extract_features oblicza cechy z binaryzowanej maski dloni. Zwraca slownik z wizualizacjami i lista cech.
 #
 # Postac wywolanania:
 #       vis, features = extract_features(mask)
-# 
+#
 # mask - binaryzowana maska, gdzie piksele dloni maja wartosc 0, a tlo ma wartosc 255. Maska powinna byc zgodna z rozmiarem obrazu.
 def extract_features(image):
     # Prepare mask for processing
@@ -19,6 +20,9 @@ def extract_features(image):
     # Find the biggest contour.
     found = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     contours = found[0]
+    if len(contours) == 0:
+        return {}, []
+
     cnt = max(contours, key=cv2.contourArea)
 
     # Get the convex hull and convexity defects.
@@ -42,6 +46,8 @@ def extract_features(image):
     defect_center_off_mass = np.zeros(2)
     depths = []
 
+    if defects is None:
+        return {}, []
     for s, e, f, d in defects[:, 0]:
         far = cnt[f][0]
 

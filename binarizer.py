@@ -1,8 +1,9 @@
 import cv2
 import numpy as np
 
+
 # Funkcja tworzy binaryzowana maske na podstawie zakresu HSV. Zwraca binaryzowana maske.
-# 
+#
 # Postac wywolanania:
 #       mask = get_mask_from_range(lower_hsv=[0, 30, 60], upper_hsv=[20, 150, 255], image_bgr=image)
 #
@@ -26,12 +27,13 @@ def get_mask_from_range(lower_hsv, upper_hsv, image_bgr):
 
     return mask
 
-# Funkcja oblicza zakres HSV na podstawie pikseli z obrazu, ktore odpowiadaja obszarowi dloni okreslonemu maska. 
+
+# Funkcja oblicza zakres HSV na podstawie pikseli z obrazu, ktore odpowiadaja obszarowi dloni okreslonemu maska.
 # Zwraca dolny i gorny zakres HSV.
-# 
+#
 # Postac wywolanania:
 #       lower_hsv, upper_hsv = get_range_from_mask(image_bgr=image, mask=mask)
-# 
+#
 # image_bgr - obraz w formacie BGR (np. wczytany za pomoca cv2.imread).
 # mask - binaryzowana maska, gdzie piksele dloni maja wartosc 0, a tlo ma wartosc 255. Maska powinna byc zgodna z rozmiarem obrazu.
 def get_range_from_mask(image_bgr, mask):
