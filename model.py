@@ -2,15 +2,17 @@ from feature_extractor import extract_features
 from presenter import show_visualization
 from binarizer import get_mask_from_range, get_range_from_mask
 import random
+import numpy as np
+
 
 # Model klasyfikujacy gesty dloni na podstawie cech wyodrebnionych z binaryzowanych masek dloni.
 # Model jest trenowany na podstawie dostarczonej bazy danych obrazow i masek dloni.
 # Oblicza zakres HSV dla dloni na podstawie dostarczonych masek, i wykorzystuje go jako zakres do binaryzacji nowych obrazow.
 # Tworzy bazę cech dla każdego obrazu treningowego, a następnie klasyfikuje nowe obrazy na podstawie odległości cech do bazy cech.
-# 
+#
 # Postac wywolanania:
 #       model = Model(image_db=(images, masks, labels), test_percentage=0.1)
-# 
+#
 # image_db - krotka zawierajaca trzy listy: obrazy, maski i etykiety. Obrazy i maski powinny byc zgodne rozmiarami. Etykiety powinny byc pojedynczymi znakami reprezentujacymi gest dloni (np. "1", "L", "O").
 # test_percentage - procent danych, ktore zostana uzyte do testowania modelu. Reszta danych zostanie uzyta do trenowania modelu. Domyslnie 0.1 (10% danych do testowania).
 class Model:
@@ -84,10 +86,21 @@ class Model:
     #
     # Postac wywolanania:
     #       vis, features, predicted_label = model.Classify(image)
-    # 
+    #
     # image - obraz w formacie BGR (np. wczytany za pomoca cv2.imread). Obraz powinien zawierac dlon, ktora ma byc sklasyfikowana.
-    def Classify(self, image):
-        mask = get_mask_from_range(self.lower_hsv, self.upper_hsv, image)
+    def Classify(self, image, certeinty=None):
+
+        if certeinty != None:
+            certeinty = np.array(certeinty)
+            mid = (self.lower_hsv + self.upper_hsv) * 0.5
+            lower = mid - certeinty * np.array([179, 255, 255])
+            upper = mid + certeinty * np.array([179, 255, 255])
+            lower = np.clip(lower, [0, 0, 0], [179, 255, 255])
+            upper = np.clip(upper, [0, 0, 0], [179, 255, 255])
+            mask = get_mask_from_range(lower, upper, image)
+
+        else:
+            mask = get_mask_from_range(self.lower_hsv, self.upper_hsv, image)
         vis, features = extract_features(mask)
         vis["created_mask"] = mask
 
