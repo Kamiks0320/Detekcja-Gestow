@@ -17,6 +17,25 @@ Celem projektu jest sprawdzenie skuteczności klasycznych metod wizji komputerow
 
 Program uczy się na zdjęciach wykonanych na jednolitym tle, z dobrym oświetleniem, odcięte na wysokości nadgarstka. 
 
+## Rozpoznawane gesty
+-kciuk w górę,
+-litera L,
+-gest „okej”,
+-gest „róg”,
+-palec wskazujący skierowany w górę
+
+## Przykład wyniku
+Przykładowy wynik działania programu:
+```text
+2136 114
+94.93
+```
+Oznacza to:
+
+2136 poprawnych klasyfikacji,
+114 błędnych klasyfikacji,
+dokładność równą 94.93%.
+![Macierz pomyłek kNN](example/example.png)
 ## Instrukcja instalacji i uruchomienia
 Należy zainstalować Python na komputer (tutorial, jak to zrobić): https://wiki.python.org/moin/BeginnersGuide(2f)Download.html
 
@@ -26,6 +45,7 @@ W folderze otworzyć konsolę i wpisać komendy:
 `pip install opencv-python`,
 `pip install numpy`,
 `pip install matplotlib`.
+
 
 Jeżeli komendy nie działają, najprawdopodobniej należy zainstalować pakiet instalacyjny pip: https://pip.pypa.io/en/stable/installation/
 
