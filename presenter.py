@@ -4,7 +4,15 @@ import numpy as np
 import uuid
 import os
 
-
+# Funkcja wyswietlajaca wizualizacje obrazow w formie siatki.
+# 
+# Postac wywolanania:
+#       show_visualization(subtitle="Wizualizacja", results={"Obraz 1": image1, "Obraz 2": image2}, width=2, save=False)
+# 
+# subtitle - napis wyswietlany nad wizualizacja.
+# results - slownik, gdzie klucze to napisy z nazwami obrazow, a wartosci to obrazy w formacie BGR (np. wczytane za pomoca cv2.imread) lub obrazy w formacie grayscale (2D).
+# width - liczba obrazow w jednym wierszu wizualizacji. Domyslnie 4.
+# save - boolean okreslajacy, czy zapisac wizualizacje do pliku zamiast wyswietlac. Domyslnie False (wyswietla wizualizacje). Jesli True, wizualizacja zostanie zapisana do katalogu "failed" z unikalna nazwa pliku.
 def show_visualization(subtitle, results, width=4, save=False):
     names = list(results.keys())
     images = list(results.values())
@@ -51,7 +59,13 @@ def show_visualization(subtitle, results, width=4, save=False):
         fig.savefig(filename, dpi=300, bbox_inches="tight")
         plt.close(fig)
 
-
+# Funkcja plot_confusion_matrix tworzy i wyswietla macierz bledow na podstawie listy prawdziwych etykiet i przewidywanych etykiet.
+#
+# Postac wywolanania:
+#       plot_confusion_matrix(true_labels, predicted_labels)
+# 
+# true_labels - lista prawdziwych etykiet dla danych testowych.
+# predicted_labels - lista przewidywanych etykiet dla danych testowych. Powinna byc tej samej dlugosci co true_labels. Etykiety powinny byc pojedynczymi znakami reprezentujacymi gest dloni (np. "1", "L", "O").
 def plot_confusion_matrix(true, pred):
     labels = sorted(set(true) | set(pred))
     label_to_idx = {label: i for i, label in enumerate(labels)}

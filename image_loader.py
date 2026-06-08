@@ -2,7 +2,15 @@ from pathlib import Path
 import random
 import cv2
 
-
+# Wczytywanie danych. 
+# Ladowanie obrazow i masek z katalogow, z obsluga losowego wyboru i wczytywania wszystkich danych.
+# 
+# Postac wywolanania:
+# 
+#       loader = ImageLoader(image_root="original_cropped", mask_root="masks_cropped")
+# 
+# image_root - katalog z obrazami .jpg
+# mask_root - katalog z maskami .bmp
 class ImageLoader:
     def __init__(self, image_root="original_cropped", mask_root="masks_cropped"):
         self.image_root = Path(image_root)
@@ -16,6 +24,12 @@ class ImageLoader:
         if not self.mask_root.exists():
             raise FileNotFoundError(f"Mask directory does not exist: {self.mask_root}")
 
+    # Wczytywanie masek na podstawie nazw plikow. Zwraca listy masek i etykiet.
+    # 
+    # Postac wywolanania:
+    #       masks, labels = loader.load_masks(names=["A_1.bmp", "B_2.bmp"])
+    # 
+    # names - lista nazw plikow masek do wczytania. Nazwy powinny odpowiadac plikom w katalogu mask_root.
     def load_masks(self, names):
         if not isinstance(names, (list, tuple)):
             raise TypeError("names must be a list or tuple")
@@ -30,6 +44,13 @@ class ImageLoader:
 
         return masks, labels
 
+    # Wczytywanie losowych masek. Zwraca listy masek, nazw plikow i etykiet.
+    # 
+    # Postac wywolanania:
+    #       masks, file_names, labels = loader.load_masks_random(n=5)
+    # 
+    # n - liczba losowych masek do wczytania. 
+    # Jesli n jest wieksze niz liczba dostepnych masek, zostana wczytane wszystkie maski.
     def load_masks_random(self, n):
         if not isinstance(n, int):
             raise TypeError("n must be an integer")
@@ -58,6 +79,12 @@ class ImageLoader:
 
         return masks, file_names, labels
 
+    # Wczytywanie obrazow na podstawie nazw plikow. Zwraca listy obrazow i etykiet.
+    #
+    # Postac wywolanania:
+    #       images, labels = loader.load_images(names=["A_1.jpg", "B_2.jpg"])
+    # 
+    # names - lista nazw plikow obrazow do wczytania. Nazwy powinny odpowiadac plikom w katalogu image_root.
     def load_images(self, names):
         if not isinstance(names, (list, tuple)):
             raise TypeError("names must be a list or tuple")
@@ -72,6 +99,13 @@ class ImageLoader:
 
         return images, labels
 
+    # Wczytywanie losowych obrazow. Zwraca listy obrazow, nazw plikow i etykiet.
+    #
+    # Postac wywolanania:
+    #       images, file_names, labels = loader.load_images_random(n=5)
+    # 
+    # n - liczba losowych obrazow do wczytania. 
+    # Jesli n jest wieksze niz liczba dostepnych obrazow, zostana wczytane wszystkie obrazy.
     def load_images_random(self, n):
         if not isinstance(n, int):
             raise TypeError("n must be an integer")
@@ -100,8 +134,15 @@ class ImageLoader:
             file_names.append(path.name)
             labels.append(path.name[0])
 
-        return masks, file_names, labels
+        return images, file_names, labels
 
+    # Wczytywanie wszystkich obrazow i masek. Zwraca listy obrazow, masek, nazw plikow i etykiet.
+    # 
+    # Postac wywolanania:
+    #       images, masks, file_names, labels = loader.load_all()
+    # 
+    # Wszystkie obrazy i maski z katalogow image_root i mask_root zostana wczytane.
+    # Nazwy plikow obrazow powinny odpowiadac nazwom plikow masek.
     def load_all(self):
         extension = "*.jpg"
         image_files = []

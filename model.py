@@ -3,7 +3,16 @@ from presenter import show_visualization
 from binarizer import get_mask_from_range, get_range_from_mask
 import random
 
-
+# Model klasyfikujacy gesty dloni na podstawie cech wyodrebnionych z binaryzowanych masek dloni.
+# Model jest trenowany na podstawie dostarczonej bazy danych obrazow i masek dloni.
+# Oblicza zakres HSV dla dloni na podstawie dostarczonych masek, i wykorzystuje go jako zakres do binaryzacji nowych obrazow.
+# Tworzy bazę cech dla każdego obrazu treningowego, a następnie klasyfikuje nowe obrazy na podstawie odległości cech do bazy cech.
+# 
+# Postac wywolanania:
+#       model = Model(image_db=(images, masks, labels), test_percentage=0.1)
+# 
+# image_db - krotka zawierajaca trzy listy: obrazy, maski i etykiety. Obrazy i maski powinny byc zgodne rozmiarami. Etykiety powinny byc pojedynczymi znakami reprezentujacymi gest dloni (np. "1", "L", "O").
+# test_percentage - procent danych, ktore zostana uzyte do testowania modelu. Reszta danych zostanie uzyta do trenowania modelu. Domyslnie 0.1 (10% danych do testowania).
 class Model:
     def __init__(self, image_db, test_percentage=0.1):
         self.feature_database = [[], []]
@@ -71,6 +80,12 @@ class Model:
 
         return sqr_sum
 
+    # Funkcja klasyfikuje gest dloni na podstawie dostarczonego obrazu. Zwraca slownik z wizualizacjami, lista cech i przewidywana etykieta gestu.
+    #
+    # Postac wywolanania:
+    #       vis, features, predicted_label = model.Classify(image)
+    # 
+    # image - obraz w formacie BGR (np. wczytany za pomoca cv2.imread). Obraz powinien zawierac dlon, ktora ma byc sklasyfikowana.
     def Classify(self, image):
         mask = get_mask_from_range(self.lower_hsv, self.upper_hsv, image)
         vis, features = extract_features(mask)
@@ -95,6 +110,12 @@ class Model:
 
         return vis, features, predicted_label
 
+    # Funkcja testuje model na danych testowych. Zwraca listy prawdziwych etykiet i przewidywanych etykiet dla danych testowych. Opcjonalnie moze wyswietlic wizualizacje dla przypadkow, gdzie przewidywana etykieta jest inna niz prawdziwa etykieta.
+    #
+    # Postac wywolanania:
+    #       true_labels, predicted_labels = model.Test(show_visualization=True)
+    #
+    # show_visualization - boolean okreslajacy, czy wyswietlic wizualizacje dla przypadkow, gdzie przewidywana etykieta jest inna niz prawdziwa etykieta. Domyslnie False (nie wyswietla wizualizacji).
     def Test(self, show_visualization=False):
         true_labels = []
         predicted_labels = []

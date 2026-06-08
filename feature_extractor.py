@@ -1,7 +1,12 @@
 import cv2
 import numpy as np
 
-
+# Funkcja extract_features oblicza cechy z binaryzowanej maski dloni. Zwraca slownik z wizualizacjami i lista cech.
+#
+# Postac wywolanania:
+#       vis, features = extract_features(mask)
+# 
+# mask - binaryzowana maska, gdzie piksele dloni maja wartosc 0, a tlo ma wartosc 255. Maska powinna byc zgodna z rozmiarem obrazu.
 def extract_features(image):
     # Prepare mask for processing
     mask = cv2.copyMakeBorder(
