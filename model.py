@@ -18,6 +18,8 @@ import numpy as np
 class Model:
     def __init__(self, image_db, test_percentage=0.1):
         self.feature_database = [[], []]
+        self.mean = None
+        self.std = None
 
         images, masks, labels = image_db
         db_labeled = {}
@@ -69,11 +71,26 @@ class Model:
 
         self.test_database = test_images, test_masks, test_labels
 
+        all_features = []
+        all_labels = []
+
         for i in range(len(model_images)):
             vis, features = extract_features(model_masks[i])
 
-            self.feature_database[0].append(model_labels[i])
-            self.feature_database[1].append(features)
+            all_features.append(features)
+            all_labels.append(model_labels[i])
+
+        all_features = np.array(all_features, dtype=np.float32)
+
+        self.mean = np.mean(all_features, axis=0)
+        self.std = np.std(all_features, axis=0)
+        self.std[self.std == 0] = 1.0
+
+        for i in range(len(all_features)):
+            norm_features = (all_features[i] - self.mean) / self.std
+
+            self.feature_database[0].append(all_labels[i])
+            self.feature_database[1].append(norm_features)
 
     def _dist(self, featuresA, featuresB):
         sqr_sum = 0
@@ -102,6 +119,9 @@ class Model:
         else:
             mask = get_mask_from_range(self.lower_hsv, self.upper_hsv, image)
         vis, features = extract_features(mask)
+        if len(features) == 0:
+            return vis, features, ""
+        features = (features - self.mean) / self.std
         vis["created_mask"] = mask
 
         distances = []

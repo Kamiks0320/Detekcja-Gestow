@@ -89,7 +89,7 @@ def extract_features(image):
 
     # Organize features and visualiztion.
     features = [
-        black_pixels_inside_contour_prc * 5,
+        black_pixels_inside_contour_prc,
         mean_dir_x,
         mean_dir_y,
         mean_depth,
